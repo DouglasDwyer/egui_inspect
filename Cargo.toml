@@ -1,0 +1,9 @@
+[package]
+name = "diplomat_test"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+convert_case = { version = "0.7.1", default-features = false }
+rustdoc-types = { version = "0.35.0", default-features = false }
+serde_json = { version = "1.0.138", default-features = false, features = [ "std" ] }
