@@ -37,6 +37,11 @@ impl BindgenContext {
     
     pub fn collect(&mut self) {
         self.collect_primitive_enums();
+        self.items.sort();
+    }
+
+    pub fn items(&self) -> &[ag::Item] {
+        &self.items
     }
 
     fn collect_primitive_enums(&mut self) {
@@ -141,13 +146,52 @@ enum TypeKind {
     Opaque
 }
 
+/// Generates the formatted C# bindings for the given items.
+pub fn autogenerate_cs(items: &[ag::Item]) -> String {
+    let mut result = "namespace Vortex.Gui;\n\n".to_string();
+
+    for item in items {
+        result += &format!("{}\n", ag::DisplayCs(item));
+    }
+
+    result
+}
+
+/// Generates the formatted Rust bindings for the given items.
+pub fn autogenerate_rs(items: &[ag::Item]) -> String {
+    let mut result = String::new();
+
+    for item in items {
+        result += &format!("{}\n", ag::DisplayRs(item));
+    }
+
+    result
+}
+
 pub fn main() {
     let mut ctx = BindgenContext::new();
     ctx.collect();
-    
-    for item in &ctx.items {
-        println!("{}", ag::DisplayRs(item));
-    }
 
-    println!("{} / {} items", ctx.total_items - ctx.remaining_items.len(), ctx.total_items);
+    println!("{}", ag::DisplayRs(&ag::Item::Struct {
+        name: "Galley".to_string(),
+        fields: vec![
+            ag::StructField {
+                name: "hello".to_string(),
+                ty: ag::TypeReference::Primitive(ag::PrimitiveType::F64),
+                docs: "it's a field".to_string()
+            },
+            ag::StructField {
+                name: "my_frien".to_string(),
+                ty: ag::TypeReference::Primitive(ag::PrimitiveType::Bool),
+                docs: "another one".to_string()
+            },
+        ],
+        has_default: true,
+        docs: "It's a str".to_string()
+    }));
+    
+    std::fs::write("Gui.g.cs", autogenerate_cs(ctx.items())).expect("Failed to write C# bindings");
+    std::fs::write("gui.rs", autogenerate_rs(ctx.items())).expect("Failed to write Rust bindings");
+
+    println!("Generated {} / {} items", ctx.total_items - ctx.remaining_items.len(), ctx.total_items);
 }
